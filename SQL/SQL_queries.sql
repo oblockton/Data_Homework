@@ -174,15 +174,67 @@ where actor.actor_id in (
 
 -- 7c. You want to run an email marketing campaign in Canada, for which you will need the names and email addresses of all Canadian customers. 
 --     Use joins to retrieve this information.
-
-
+select CONCAT(cust.first_name,' ', cust.last_name) AS Customer_Name, cust.email, cntry.country
+from customer cust
+join address addy
+on cust.address_id = addy.address_id
+join city cty
+on addy.city_id = cty.city_id
+join country cntry
+on cty.country_id = cntry.country_id
+where cntry.country like '%Canada%'
+order by Customer_Name asc;    
+-- result
+-- DERRICK	DERRICK.BOURQUE@sakilacustomer.org
+-- DARRELL	DARRELL.POWER@sakilacustomer.org
+-- LORETTA	LORETTA.CARPENTER@sakilacustomer.org
+-- CURTIS	CURTIS.IRBY@sakilacustomer.org
+-- TROY	TROY.QUIGLEY@sakilacustomer.org
+-- check results
 select country_id, country
 from country
 where country like '%Canada%';
+-- canada country id = 20
+select address_id
+from customer 
+where first_name in ('DERRICK','DARRELL','LORETTA','CURTIS','TROY');
+-- result 193 415 441 468 481
+select city_id
+from address
+where address_id in ('193', '415', '441', '468', '481');
+-- result 383 430 565 196 179
+select country_id
+from city
+where city_id in ('383', '430', '565', '196', '179');
+-- result 20, 20, 20, 20, 20 
 
-select 
+-- 7d. Sales have been lagging among young families, and you wish to target all family movies for a promotion. 
+--     Identify all movies categorized as family films.
+select film.title, film.rating, filmcat.category_id, cat.name
+from film
+join film_category filmcat
+on film.film_id = filmcat.film_id
+join category cat
+on filmcat.category_id = cat.category_id
+where cat.name like '%Family%'
+order by film.title asc;
 
+-- 7e. Display the most frequently rented movies in descending order.
+select rent_count.title, count(rent_count.rents_inv_loc) as rental_count
+from
+	(select film.title, count(rent.inventory_id) as rents_inv_loc
+		from rental rent
+	join inventory i
+		on rent.inventory_id = i.inventory_id
+	join film
+		on i.film_id= film.film_id
+	group by rent.inventory_id) rent_count
+group by rent_count.title
+vg order by rental_count desc;
     
+-- 7f. Write a query to display how much business, in dollars, each store brought in.
+
+
 
 
 
