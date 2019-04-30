@@ -55,7 +55,7 @@ def precipitation():
     most_current = list(np.ravel(most_current)) # could not perform datetime operations on the returned query string with applying np.ravel.
 
     most_current =  dt.datetime.strptime(most_current[0], "%Y-%m-%d") # set string to datetime.obj
-    yr_frm_moscurr = most_current.replace(year= most_current.year - 1)
+    yr_frm_moscurr = most_current.replace(year= most_current.year - 1) #create a date with same start day-month but for prior year
     print(most_current)
     print(yr_frm_moscurr)
 
@@ -72,7 +72,7 @@ def precipitation():
 @app.route("/api/v1.0/stations")
 def stations():
     # Return a JSON list of stations from the dataset.
-    stations = session.query(Station.name,Station.id).all()
+    stations = session.query(Station.name).all()
     station_list = list(np.ravel(stations))
     return jsonify(station_list)
 
