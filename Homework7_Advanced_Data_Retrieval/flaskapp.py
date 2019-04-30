@@ -8,7 +8,11 @@ import datetime as dt
 from collections import OrderedDict
 
 from flask import Flask, jsonify
-engine = create_engine("sqlite:///Resources/hawaii.sqlite")
+engine = create_engine("sqlite:///Resources/hawaii.sqlite", connect_args={'check_same_thread': False})
+ # connect_args needed to prevent thread error when exploring multiple pages without restarting the app for each page.
+ # Reference https://stackoverflow.com/questions/48218065/programmingerror-sqlite-objects-created-in-a-thread-can-only-be-used-in-that-sa
+
+
 # reflect an existing database into a new model
 Base = automap_base()
 # reflect the tables
@@ -32,8 +36,14 @@ def welcome():
     "<a href=/api/v1.0/precipitation>Precipitation Data for most recent year of observations</a><br/>"
     "<a href=/api/v1.0/stations> Station List: Name, ID</a><br/>"
     "<a href=/api/v1.0/tobs>Temperature Observation Data for most recent year of observations</a><br/>"
-
-
+    "<br/>"
+    "<p>/api/v1.0/yyyy-mm-dd<br/>Temperature Min Max Avg of all data starting from the prior year date of the users input.<br/> \
+    Example: Input:2018-06-12, Data_Start:2017-06-12<br/> \
+    !!!!! Requires start date input in format yyyy-mm-dd. Include the '-' character.</p><br/>"
+    "<br/>"
+    "<p>/api/v1.0/start/end<br/>Temperature Min Max Avg of all data starting from the prior year date of the users input, ending at user input end date from prior year.<br/> \
+    Example: Input:2018-06-12, Data_Start:2017-06-12. The example also applies to end_date<br/> \
+    !!!!! Requires start date input in format yyyy-mm-dd. Include the '-' character.</p><br/>"
     )
 
 @app.route("/api/v1.0/precipitation")
@@ -123,6 +133,41 @@ def frm_strt_norm(start):
         norms_list.append(norm_dict)
 
     return jsonify(norms_list)
+
+
+@app.route('/api/v1.0/<start>/<end>')
+def trip_norm(start,end):
+
+    def calc_temps2(start_date,end_date):
+        dt_start =  dt.datetime.strptime(start_date, "%Y-%m-%d") # set string to datetime.obj
+        dt_end =  dt.datetime.strptime(end_date, "%Y-%m-%d") # set string to datetime.obj
+        dt_st_prioryr = dt_start.replace(year= dt_start.year - 1)
+        dt_end_prioryr = dt_end.replace(year= dt_end.year - 1)
+        """TMIN, TAVG, and TMAX for a list of dates.
+
+        Args:
+            start_date (string): A date string in the format %Y-%m-%d
+            end_date (string): A date string in the format %Y-%m-%d
+
+        Returns:
+            TMIN, TAVE, and TMAX
+        """
+
+        return session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
+            filter(Measurement.date >= dt_st_prioryr).filter(Measurement.date <= dt_end_prioryr).all()
+
+    year_norms2 = calc_temps2(start,end)
+    norms_list2 = []
+    for min,avg,max in year_norms2:
+        norm_dict = {}
+        norm_dict["Min Temp"] = min
+        norm_dict["Avg Temp"] = avg
+        norm_dict["Max Temp"] = max
+        norms_list2.append(norm_dict)
+
+    return jsonify(norms_list2)
+
+
 
 
 
